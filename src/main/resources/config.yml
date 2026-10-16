@@ -1,0 +1,269 @@
+# ===================================================================
+# PaperQQBot 配置 - 服务器信息推送到 QQ 群
+# 适配 Paper 26.2 / Minecraft 26.2 / Java 25
+# 支持两种机器人模式：napcat（NapCat / OneBot 11）与 official（QQ 官方机器人）
+# ===================================================================
+
+# ----------- 机器人模式（可在 WebUI 切换） -----------
+# napcat   = NapCat 模式，需要自行部署 NapCat（见下方 bot / ws 配置）
+# official = QQ 官方机器人模式，无需额外 QQ 号，只需填写机器人 AppID 与密钥（见下方 official-bot）
+mode: "napcat"
+
+# ----------- QQ 官方机器人（official 模式） -----------
+# 在 QQ 开放平台「机器人管理」页面获取机器人 ID（AppID）与密钥（AppSecret）
+official-bot:
+  # 机器人 ID（AppID）
+  app-id: ""
+  # 机器人密钥（AppSecret）
+  secret: ""
+
+# ----------- QQ 绑定（两种模式通用） -----------
+# 流程：QQ 群内 @机器人 发送绑定指令获取验证码 -> 进服务器 /qq绑定 验证码
+binding:
+  # 是否启用绑定功能
+  enabled: true
+  # QQ 群内 @机器人 完成绑定的指令
+  request-command: "/绑定"
+  # 验证码有效期（分钟），同时是强制绑定模式下的踢出时限
+  code-expire-minutes: 10
+  # 是否允许重新绑定（换绑到其他游戏账号 / QQ）
+  allow-rebind: true
+  # 强制绑定：未绑定不能移动，进服自动发码，到期未绑定踢出；断线未绑定在有效期内重连沿用原码
+  require-bind: true
+
+# ----------- QQ 群签到（两种模式通用，需先完成 QQ 绑定） -----------
+signin:
+  # 是否启用签到
+  enabled: true
+  # 群内 @机器人 签到指令
+  command: "/签到"
+  # 每次签到奖励金币数量（通过 Vault 发放到服务器经济插件）
+  reward: 100
+
+# ----------- QQ 群 <-> 服务器 消息互通 -----------
+chat-relay:
+  # QQ 群消息转发到游戏内（napcat 模式可收到全量群消息；
+  # official 模式需群管理员在群设置中允许机器人接收群内全部消息）
+  group-to-server: true
+  # 群消息进游戏的展示格式（%name% 发送者名，%message% 内容）
+  group-format: "§7[QQ群] §f%name%: %message%"
+
+# ----------- NapCat (OneBot 11) HTTP API 连接配置（napcat 模式） -----------
+bot:
+  # NapCat HTTP 上报地址（在 NapCat 配置文件中开启 HTTP 服务并填写对应端口）
+  # 例：http://127.0.0.1:3000
+  http-url: "http://127.0.0.1:3000"
+  # NapCat access_token，未设置则留空
+  access-token: ""
+  # HTTP 连接超时（秒）
+  connect-timeout: 10
+  # HTTP 读取超时（秒）
+  read-timeout: 15
+  # 调用失败时是否打印详细错误到控制台
+  debug: false
+  # 调用失败重试次数（0 表示不重试）
+  retry: 2
+  # 重试间隔（毫秒）
+  retry-interval-millis: 1500
+
+# ----------- 自定义服务器信息（占位符 %server_xxx% 的来源） -----------
+server:
+  # 服务器对外展示名
+  name: "我的生存服"
+  # 服务器对外地址（玩家可用此 IP 连接）
+  address: "play.example.com:25565"
+  # 群内对外 QQ 群号（用于推送，可填群号或留空）
+  contact: "123456789"
+  # 自定义备注，会被 %server_extra% 引用
+  extra: "全新周目开荒，欢迎加入！"
+  # 服务器介绍网站/官网地址
+  website: "https://example.com"
+
+# ----------- 推送目标群列表 -----------
+# 每个群可独立控制启用的推送事件类型。
+# events 取值（不写则等同 inherit，使用上方 events.* 默认开关）：
+#   start / stop / join / quit / empty / chat / death / tps-warning
+#   设为 ["*"] 表示接收所有事件；设为 [] 表示该群不接收任何推送
+groups:
+  - group-id: 1000000001
+    name: "管理员群"
+    enabled: true
+    events: ["*"]
+  - group-id: 1000000002
+    name: "玩家公告群"
+    enabled: true
+    # 只接收服务器启停、空服通知
+    events: ["start", "stop", "empty"]
+  - group-id: 1000000003
+    name: "禁用示例群"
+    enabled: false
+    events: ["*"]
+
+# ----------- 事件总开关（被群 events "inherit" 或 "*" 时使用） -----------
+event-toggles:
+  start: true
+  stop: true
+  join: false
+  quit: false
+  empty: true
+  chat: false
+  death: false
+  tps-warning: true
+
+# ----------- 触发阈值 -----------
+triggers:
+  # 服务器空闲到 0 人时推送一次空服通知（true 启用）
+  empty-on-zero-players: true
+  # 上一次有人时不要重复推送（启用以避免抖动）
+  empty-only-on-transition: true
+  # TPS 低于该值时推送警告
+  tps-warning-threshold: 15.0
+  # TPS 警告推送最小间隔（秒）
+  tps-warning-cooldown-seconds: 300
+
+# ----------- 消息模板 -----------
+# 支持的占位符：
+#   %server_name%       服务器名
+#   %server_address%    服务器地址
+#   %server_contact%    服务器 QQ 群
+#   %server_extra%      服务器备注
+#   %server_website%    服务器官网
+#   %server_version%    Minecraft 版本（Bukkit.getVersion）
+#   %server_motd%       服务器 MOTD（去掉颜色码）
+#   %server_ip%         服务器 IP（自动获取本机 IP，可能不准）
+#   %server_port%       服务器端口
+#   %online_players%    当前在线玩家数
+#   %max_players%       最大玩家数
+#   %player_list%       在线玩家列表（逗号分隔）
+#   %tps_1m% %tps_5m% %tps_15m%   TPS 1/5/15 分钟均值
+#   %memory_used_mb%    已用内存 (MB)
+#   %memory_max_mb%     最大内存 (MB)
+#   %uptime_seconds%    已运行时间（秒）
+#   %uptime_formatted%  已运行时间（人类可读，例：1h 2m 3s）
+#   %datetime%          推送时间 yyyy-MM-dd HH:mm:ss
+#   %date%              推送日期 yyyy-MM-dd
+#   %time%              推送时间 HH:mm:ss
+#   %player_name%       触发玩家名（仅 join/quit/chat/death 模板）
+#   %player_display%     触发玩家显示名
+#   %death_message%     死亡消息（仅 death 模板）
+#   %chat_message%      聊天内容（仅 chat 模板）
+templates:
+  start: |
+    【服务器启动】%server_name%
+    版本：%server_version%
+    地址：%server_address%
+    在线：%online_players%/%max_players%
+    备注：%server_extra%
+    启动时间：%datetime%
+  stop: |
+    【服务器关闭】%server_name%
+    服务器已停止运行
+    关闭时间：%datetime%
+  join: |
+    🟢 %player_name% 加入了 %server_name%
+    当前在线：%online_players%/%max_players%
+  quit: |
+    🔴 %player_name% 退出了 %server_name%
+    当前在线：%online_players%/%max_players%
+  empty: |
+    💤 服务器 %server_name% 当前无人在线
+    上线地址：%server_address%
+    快来玩呀~
+  chat: |
+    [%server_name%] %player_name%：%chat_message%
+  death: |
+    ☠ %player_name% 阵亡：%death_message%
+  tps-warning: |
+    ⚠ 服务器 %server_name% TPS 偏低！
+    TPS(1m/5m/15m)：%tps_1m% / %tps_5m% / %tps_15m%
+    在线玩家：%online_players%
+    内存：%memory_used_mb%/%memory_max_mb% MB
+
+# ----------- 其他 -----------
+misc:
+  # 关服推送是否在主线程关闭前异步发出（推荐 true）
+  async-shutdown-push: true
+  # 关服推送前等待多少 tick 确保 HTTP 发送完成（20 tick = 1 秒）
+  shutdown-push-wait-ticks: 60
+  # 启动后延迟多少 tick 推送 start 事件（让占位符稳定）
+  start-push-delay-ticks: 40
+
+# ----------- @ 回复功能（被群成员 @ 时回复服务器在线人数） -----------
+# 工作原理：
+#   1. 在 NapCat 配置中开启 "Websocket服务器"（与你配置的 HTTP 服务可独立共存）
+#   2. 本插件作为 WS 客户端连接 NapCat，接收群消息事件
+#   3. 解析消息段，若 @ 命中机器人 self_id，则触发回复
+at-reply:
+  # 是否启用 @ 回复
+  enabled: false
+  # 机器人 QQ 号（self_id）。填 0 则自动从事件中学习
+  self-id: 0
+  # 同一群最小回复间隔（毫秒），避免刷屏（管理员指令不受限）
+  cooldown-ms: 3000
+  # 查询服务器信息的指令：@机器人 + 该指令即返回服务器状态
+  query-command: "/查询"
+  # 回复模板，支持所有通用占位符，额外支持：
+  #   %sender_id%   触发者 QQ 号
+  # 例：使用 [CQ:at,qq=xxx] 回头 @ 触发者
+  template: |
+    当前服务器在线：%online_players%/%max_players%
+    在线玩家：%player_list%
+    TPS：%tps_1m%  运行时间：%uptime_formatted%
+
+# ----------- WebSocket 监听（接收 NapCat 推送的事件） -----------
+ws:
+  # 是否启用 WS 监听（at-reply 启用时必须开启此项）
+  enabled: false
+  # NapCat Websocket 服务地址，例 ws://127.0.0.1:3001
+  # 注意：NapCat 的 WS 端口通常与 HTTP 端口不同，请按 NapCat 实际配置填写
+  url: "ws://127.0.0.1:3001"
+  # 鉴权 token，留空则复用 bot.access-token
+  access-token: ""
+  # 断线重连间隔（毫秒）
+  reconnect-ms: 5000
+
+# ----------- WebUI 控制台 -----------
+# 启用后可通过浏览器访问 /api/* 和控制页面，在线修改配置
+web:
+  # 是否启用 WebUI
+  enabled: true
+  # 绑定地址：127.0.0.1 仅本机；0.0.0.0 表示对外（务必设置 token）
+  host: "127.0.0.1"
+  # 监听端口
+  port: 8765
+  # 鉴权 token，留空则不鉴权（仅本机使用可留空；对外务必设置长随机字符串）
+  access-token: ""
+
+# ----------- 官网账号（WebUI 登录鉴权） -----------
+# WebUI 首次打开需输入官网注册后获得的“专属绑定码”，绑定后仅该账号可登录。
+account:
+  # 官网 API 地址（一般无需修改）
+  api-base: "https://dlapi.0p.ink/api.php"
+
+# ----------- 超级管理员 QQ 号 -----------
+# 列表中的 QQ 号可在群内 @ 机器人后直接执行游戏指令（以 / 开头）
+# 例如：@机器人 /gamemode creative  或  @机器人 /list
+admins:
+  - 123456789
+  # - 987654321
+
+# ----------- 大模型（LLM）对话 -----------
+# 启用后，群内 @ 机器人（非管理员指令）会调用大模型生成回复
+# 兼容 OpenAI Chat Completions 协议（OpenAI / DeepSeek / 通义千问 / Ollama 等）
+llm:
+  # 是否启用大模型对话
+  enabled: false
+  # API 地址（OpenAI 兼容格式）
+  api-url: "https://api.openai.com/v1/chat/completions"
+  # API Key
+  api-key: ""
+  # 模型名称
+  model: "gpt-4o-mini"
+  # 系统提示词，定义机器人的人设和行为
+  system-prompt: "你是一个 Minecraft 服务器助手，用简洁友好的中文回答玩家关于服务器的问题。"
+  # 请求超时（秒）
+  timeout-seconds: 30
+  # 温度（0~2，越高越随机）
+  temperature: 0.7
+  # 多轮上下文轮数：记住最近 N 轮对话（一问一答为一轮），0=关闭记忆、每次独立对话
+  context-turns: 5

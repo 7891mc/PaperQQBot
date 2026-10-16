@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaperQQBot 控制台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Serif:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F1EA;
+  --surface:#FBFAF6;
+  --ink:#161616;
+  --ink-2:#3A3A3A;
+  --ink-3:#6F6F6F;
+  --line:#E2DCD0;
+  --line-2:#D4CDBC;
+  --accent:#C03030;
+  --accent-soft:#F5DEDE;
+  --ok:#2F7A4F;
+  --warn:#B5801A;
+  --danger:#A02828;
+  --shadow:0 1px 0 rgba(20,16,10,.04), 0 8px 24px -12px rgba(20,16,10,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:400;line-height:1.5;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+::selection{background:var(--accent);color:#fff}
+.serif{font-family:'IBM Plex Serif',Georgia,serif}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+
+/* 导航栏 */
+.topbar{
+  position:sticky;top:0;z-index:20;background:rgba(244,241,234,.86);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;padding:14px 28px;gap:24px;
+}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand .logo{
+  width:26px;height:26px;border-radius:50%;background:var(--ink);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  font-weight:600;font-size:13px;font-family:'IBM Plex Serif'
+}
+.brand .name{font-family:'IBM Plex Serif';font-weight:500;font-size:19px;letter-spacing:.2px}
+.brand .ver{font-size:11px;color:var(--ink-3);letter-spacing:.4px;font-family:'JetBrains Mono'}
+nav.tabs{display:flex;gap:2px;margin-left:8px}
+nav.tabs button{
+  background:none;border:none;cursor:pointer;font-family:inherit;
+  font-size:14px;color:var(--ink-2);padding:8px 14px;border-radius:6px;
+  transition:background .18s,color .18s,transform .18s;
+}
+nav.tabs button:hover{background:rgba(20,16,10,.04)}
+nav.tabs button.active{
+  color:var(--ink);background:var(--surface);box-shadow:var(--shadow);
+}
+.spacer{flex:1}
+.status-pill{
+  display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3);
+  font-family:'JetBrains Mono';
+}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.dot.ok{background:var(--ok)}
+.dot.warn{background:var(--warn)}
+.dot.danger{background:var(--danger)}
+
+/* 主区域 */
+main{max-width:1080px;margin:0 auto;padding:42px 28px 120px}
+.panel{
+  display:none;opacity:0;transform:translateY(8px) scale(.985);
+  transition:opacity .38s cubic-bezier(.2,.7,.2,1), transform .38s cubic-bezier(.2,.7,.2,1);
+}
+.panel.active{display:block;animation:enter .42s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes enter{
+  0%{opacity:0;transform:translateY(10px) scale(.98)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+.panel-title{
+  font-family:'IBM Plex Serif';font-size:28px;font-weight:500;
+  margin:0 0 4px;letter-spacing:-.2px;
+}
+.panel-sub{color:var(--ink-3);font-size:13px;margin:0 0 28px}
+.section-label{
+  font-size:11px;text-transform:uppercase;letter-spacing:1.6px;
+  color:var(--ink-3);font-weight:500;margin:32px 0 14px;
+  padding-bottom:8px;border-bottom:1px solid var(--line)
+}
+
+/* 卡片 */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:18px 18px 16px;box-shadow:var(--shadow);
+  transition:transform .25s, box-shadow .25s;
+}
+.card:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(20,16,10,.04),0 14px 32px -14px rgba(20,16,10,.22)}
+.card .k{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--ink-3)}
+.card .v{font-family:'JetBrains Mono';font-size:22px;color:var(--ink);margin-top:6px;font-weight:500}
+.card .u{font-size:11px;color:var(--ink-3);margin-top:2px}
+
+/* 表单 */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+.field label{font-size:12px;color:var(--ink-2);letter-spacing:.3px}
+.field input,.field textarea,.field select{
+  background:transparent;border:none;border-bottom:1px solid var(--line-2);
+  padding:8px 0;color:var(--ink);font-family:inherit;font-size:14px;
+  transition:border-color .2s,background .2s;border-radius:0;
+}
+.field input:focus,.field textarea:focus,.field select:focus{
+  outline:none;border-bottom-color:var(--accent);
+}
+.field textarea{resize:vertical;min-height:80px;font-family:'JetBrains Mono';font-size:13px;line-height:1.5}
+.field .hint{font-size:11px;color:var(--ink-3);margin-top:2px}
+.toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.toggle input{display:none}
+.toggle .track{
+  width:36px;height:20px;background:var(--line-2);border-radius:20px;
+  position:relative;transition:background .25s;
+}
+.toggle .track::after{
+  content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;
+  background:#fff;border-radius:50%;transition:transform .25s;
+  box-shadow:0 1px 3px rgba(0,0,0,.18);
+}
+.toggle input:checked + .track{background:var(--ink)}
+.toggle input:checked + .track::after{transform:translateX(16px)}
+
+/* 群列表 */
+.group-row{
+  display:grid;grid-template-columns:140px 1fr auto auto auto;gap:14px;align-items:center;
+  padding:14px 0;border-bottom:1px solid var(--line);
+}
+.group-row:last-child{border-bottom:none}
+.group-row input,.group-row select{
+  background:transparent;border:none;border-bottom:1px solid transparent;
+  padding:4px 0;font-family:inherit;font-size:14px;color:var(--ink)
+}
+.group-row input:focus,.group-row select:focus{
+  outline:none;border-bottom-color:var(--accent)
+}
+.btn-del{
+  background:none;border:1px solid var(--line-2);border-radius:6px;
+  color:var(--ink-3);cursor:pointer;padding:5px 10px;font-size:12px;
+  transition:all .18s;
+}
+.btn-del:hover{color:var(--danger);border-color:var(--danger)}
+
+/* 按钮 */
+.actions{display:flex;gap:10px;margin-top:32px}
+.btn{
+  background:var(--ink);color:#fff;border:none;border-radius:6px;
+  padding:10px 18px;font-family:inherit;font-size:14px;cursor:pointer;
+  transition:transform .18s, background .18s, box-shadow .25s;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px -8px rgba(20,16,10,.4)}
+.btn:active{transform:translateY(0)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line-2)}
+.btn.ghost:hover{background:var(--surface)}
+.btn.accent{background:var(--accent)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+
+/* toast */
+.toast{
+  position:fixed;right:24px;bottom:24px;z-index:50;
+  background:var(--ink);color:#fff;padding:12px 18px;border-radius:8px;
+  font-size:13px;box-shadow:0 8px 24px -8px rgba(20,16,10,.5);
+  opacity:0;transform:translateY(8px);transition:opacity .25s, transform .25s;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.err{background:var(--danger)}
+.toast.ok{background:var(--ok)}
+
+/* 事件开关 */
+.event-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 24px}
+.event-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px dashed var(--line)
+}
+.event-row .name{font-size:14px;color:var(--ink)}
+.event-row .name code{font-family:'JetBrains Mono';font-size:12px;color:var(--ink-3);margin-left:8px}
+
+/* 鉴权提示 */
+.auth-cover{
+  position:fixed;inset:0;background:var(--bg);z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  opacity:1;transition:opacity .35s
+}
+.auth-cover.hide{opacity:0;pointer-events:none}
+.auth-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:32px 36px;width:340px;box-shadow:var(--shadow);text-align:center;
+  animation:authIn .45s cubic-bezier(.2,.7,.2,1)
+}
+@keyframes authIn{
+  0%{opacity:0;transform:scale(.96) translateY(6px)}
+  100%{opacity:1;transform:scale(1) translateY(0)}
+}
+.auth-card h2{font-family:'IBM Plex Serif';font-weight:500;margin:0 0 6px}
+.auth-card p{font-size:12px;color:var(--ink-3);margin:0 0 18px}
+.auth-card input{
+  width:100%;background:transparent;border:none;border-bottom:1px solid var(--line-2);
+  padding:8px 0;font-family:'JetBrains Mono';font-size:14px;text-align:center;
+  transition:border-color .2s;border-radius:0;
+}
+.auth-card input:focus{outline:none;border-bottom-color:var(--accent)}
+.auth-card .btn{width:100%;margin-top:18px}
+.auth-tabs{display:flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;margin:6px 0 16px}
+.auth-tabs button{flex:1;background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;color:var(--ink-2);padding:8px 0}
+.auth-tabs button.active{background:var(--ink);color:#fff}
+.auth-pane{display:none}.auth-pane.active{display:block}
+.auth-pane .btn{margin-top:14px}
+.code-row{display:flex;gap:8px;align-items:center}
+.code-row input{flex:1}
+.code-row .btn{width:auto;margin:0;white-space:nowrap;padding:9px 12px;font-size:12px}
+.auth-hint{font-size:11px;color:var(--ink-3);margin-top:14px;line-height:1.6}
+.auth-hint a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent);font-weight:600}
+.auth-hint a:hover{opacity:.8}
+.auth-card input.left{text-align:left}
+
+.empty{color:var(--ink-3);font-size:13px;font-style:italic;padding:14px 0}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;background:var(--accent-soft);color:var(--accent);font-family:'JetBrains Mono'}
+
+/* 模式切换 */
+.mode-switch{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.mode-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink-2);padding:9px 18px;transition:background .18s,color .18s}
+.mode-btn:hover{background:rgba(20,16,10,.04)}
+.mode-btn.active{background:var(--ink);color:#fff}
+.mode-hidden{display:none!important}
+
+/* 数据表 */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-3);font-weight:500;padding:8px 10px;border-bottom:1px solid var(--line)}
+.data-table td{padding:9px 10px;border-bottom:1px solid var(--line)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table .mono{font-size:12px;color:var(--ink-3)}
+.table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 12px;margin-bottom:18px;overflow-x:auto}
+.mini-btn{background:none;border:1px solid var(--line-2);border-radius:6px;color:var(--ink-3);cursor:pointer;padding:4px 10px;font-size:12px;transition:all .18s}
+.mini-btn:hover{color:var(--danger);border-color:var(--danger)}
+@media (max-width:760px){
+  .form-grid,.event-grid,.cards{grid-template-columns:1fr}
+  .group-row{grid-template-columns:1fr;gap:6px}
+  nav.tabs{overflow-x:auto;flex-wrap:nowrap;white-space:nowrap}
+}
+</style>
+</head>
+<body>
+
+<!-- 鉴权遮罩 -->
+<div class="auth-cover" id="authCover">
+  <div class="auth-card">
+    <h2>PaperQQBot</h2>
+
+    <!-- 首次绑定 -->
+    <div id="authBind">
+      <p>首次使用，请输入官网账号的专属绑定码</p>
+      <input id="bindCodeInput" placeholder="PQB-XXXX-XXXX-XXXX-XXXX" autocomplete="off">
+      <button class="btn" id="bindBtn">绑定并进入</button>
+      <div class="auth-hint">还没有绑定码？<a id="getBindCodeLink" href="https://dlapi.0p.ink/" target="_blank" rel="noopener">获取绑定码 → 前往官网注册</a></div>
+    </div>
+
+    <!-- 账号登录 -->
+    <div id="authLogin" style="display:none">
+      <p id="loginWelcome">请使用绑定账号登录</p>
+      <div class="auth-tabs">
+        <button id="tabPw" class="active">密码登录</button>
+        <button id="tabMail">验证码登录</button>
+      </div>
+
+      <div class="auth-pane active" id="panePw">
+        <input class="left" id="loginEmail" type="email" placeholder="邮箱" autocomplete="username">
+        <input class="left" id="loginPassword" type="password" placeholder="密码" autocomplete="current-password">
+        <button class="btn" id="pwLoginBtn">登录</button>
+      </div>
+
+      <div class="auth-pane" id="paneMail">
+        <input class="left" id="mailEmail" type="email" placeholder="邮箱">
+        <div class="code-row">
+          <input class="left" id="mailCode" placeholder="邮箱验证码">
+          <button class="btn" id="sendMailBtn">发送</button>
+        </div>
+        <button class="btn" id="mailLoginBtn">登录</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">P</div>
+    <div class="name">PaperQQBot</div>
+    <div class="ver">v1.0</div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="overview">概览</button>
+    <button data-tab="server">服务器</button>
+    <button data-tab="groups">推送群组</button>
+    <button data-tab="events">事件与模板</button>
+    <button data-tab="binding">绑定与金币</button>
+    <button data-tab="advanced">高级</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="status-pill" id="connStatus">
+    <span class="dot" id="connDot"></span>
+    <span id="connText">连接中…</span>
+  </div>
+</header>
+
+<main>
+  <!-- 概览 -->
+  <section class="panel" data-panel="overview">
+    <h1 class="panel-title">服务器概览</h1>
+    <p class="panel-sub">实时状态、推送链路与资源占用</p>
+    <div class="cards" id="statCards"></div>
+
+    <div class="section-label">推送链路</div>
+    <div class="cards" id="linkCards"></div>
+  </section>
+
+  <!-- 服务器配置 -->
+  <section class="panel" data-panel="server">
+    <h1 class="panel-title">服务器信息</h1>
+    <p class="panel-sub">这些字段对应模板中的 %server_xxx% 占位符</p>
+    <div class="form-grid">
+      <div class="field"><label>服务器名称</label><input id="serverName"></div>
+      <div class="field"><label>连接地址</label><input id="serverAddress"></div>
+      <div class="field"><label>对外 QQ 群号</label><input id="serverContact"></div>
+      <div class="field"><label>官网</label><input id="serverWebsite"></div>
+      <div class="field full"><label>备注</label><input id="serverExtra"></div>
+    </div>
+
+    <div class="section-label">机器人模式（切换后保存即生效）</div>
+    <div class="mode-switch" id="modeSwitch">
+      <button type="button" class="mode-btn" data-mode="napcat">NapCat 模式</button>
+      <button type="button" class="mode-btn" data-mode="official">QQ 官方机器人模式</button>
+    </div>
+    <div class="field" style="margin-top:10px"><span class="hint" id="modeHint"></span></div>
+
+    <div id="officialCard" style="display:none">
+      <div class="section-label">QQ 官方机器人（只需机器人 ID 与密钥）</div>
+      <div class="form-grid">
+        <div class="field"><label>机器人 ID（AppID）</label><input id="ofAppId" placeholder="QQ开放平台-机器人管理-AppID"></div>
+        <div class="field"><label>机器人密钥（AppSecret）</label><input id="ofSecret" type="password" placeholder="留空表示不修改原密钥"></div>
+      </div>
+    </div>
+
+    <div id="napcatCard">
+    <div class="section-label">NapCat 连接</div>
+    <div class="form-grid">
+      <div class="field"><label>HTTP 地址</label><input id="botHttpUrl" placeholder="http://127.0.0.1:3000"></div>
+      <div class="field"><label>Access Token</label><input id="botAccessToken" type="password"></div>
+      <div class="field"><label>失败重试次数</label><input id="botRetry" type="number" min="0" max="10"></div>
+      <label class="toggle"><input type="checkbox" id="botDebug"><span class="track"></span> 开启调试日志</label>
+    </div>
+    </div>
+
+    <div class="section-label">QQ 绑定（进服自动发码，QQ 群内 @机器人 /绑定 验证码）</div>
+    <div class="form-grid">
+      <label class="toggle"><input type="checkbox" id="bindEnabled"><span class="track"></span> 启用 QQ 绑定</label>
+      <div class="field"><label>QQ 群绑定指令</label><input id="bindCmd" placeholder="/绑定"></div>
+      <div class="field"><label>验证码有效期（分钟）</label><input id="bindExpire" type="number" min="1"></div>
+      <label class="toggle"><input type="checkbox" id="bindRebind"><span class="track"></span> 允许重新绑定（换绑）</label>
+      <label class="toggle"><input type="checkbox" id="bindRequire"><span class="track"></span> 强制绑定：未绑定不能移动，超时踢出</label>
+    </div>
+
+    <div class="section-label">群签到（需先绑定，每日一次，奖励通过 Vault 发放）</div>
+    <div class="form-grid">
+      <label class="toggle"><input type="checkbox" id="signEnabled"><span class="track"></span> 启用群签到</label>
+      <div class="field"><label>群内签到指令</label><input id="signCmd" placeholder="/签到"></div>
+      <div class="field"><label>每次奖励金币</label><input id="signReward" type="number" min="0" step="1"></div>
+    </div>
+
+    <div class="section-label">QQ 群 ↔ 服务器 消息互通</div>
+    <div class="form-grid">
+      <label class="toggle"><input type="checkbox" id="relayEnabled"><span class="track"></span> QQ 群消息转发到游戏内</label>
+      <div class="field full"><label>进游戏展示格式（%name% %message%）</label><input id="relayFormat"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="saveServer">保存</button>
+      <button class="btn ghost" id="reloadBtn">仅重载不保存</button>
+    </div>
+  </section>
+
+  <!-- 推送群组 -->
+  <section class="panel" data-panel="groups">
+    <h1 class="panel-title">推送群组</h1>
+    <p class="panel-sub" id="groupsSub">配置每群接收哪些事件，events 留空等价于 inherit</p>
+    <div id="groupList"></div>
+    <div id="officialGroupList" style="display:none"></div>
+    <div class="actions">
+      <button class="btn ghost" id="addGroupBtn">+ 添加群</button>
+      <button class="btn" id="saveGroups">保存</button>
+    </div>
+  </section>
+
+  <!-- 事件与模板 -->
+  <section class="panel" data-panel="events">
+    <h1 class="panel-title">事件与模板</h1>
+    <p class="panel-sub">事件总开关决定该事件是否会被推送；模板支持占位符替换</p>
+
+    <div class="section-label">事件总开关</div>
+    <div class="event-grid" id="eventToggles"></div>
+
+    <div class="section-label">消息模板</div>
+    <div class="form-grid" id="templatesGrid"></div>
+    <div class="actions">
+      <button class="btn" id="saveEvents">保存</button>
+      <button class="btn ghost" id="testBtn">发送测试推送</button>
+    </div>
+  </section>
+
+  <!-- 绑定与金币 -->
+  <section class="panel" data-panel="binding">
+    <h1 class="panel-title">绑定与金币</h1>
+    <p class="panel-sub">QQ 绑定关系、黑名单与金币账本管理</p>
+
+    <div class="section-label">绑定流程说明</div>
+    <div class="card" style="margin-bottom:18px">
+      <div style="font-size:13px;line-height:1.9">
+        1. 玩家进入服务器即自动获得仅本人可见的 6 位验证码（也可发送 <code class="mono">/绑定QQ</code> 重新获取）；<br>
+        2. 玩家在 QQ 群内 @机器人 发送 <code class="mono">/绑定 验证码</code> 完成绑定；<br>
+        3. 开启强制绑定后，未绑定不能移动，验证码到期（默认 10 分钟）仍未绑定将被踢出；中途退出且未绑定，有效期内重连仍用原验证码；<br>
+        4. 已绑定玩家在群内 @机器人 发送 /签到 每日领取金币；可用 /解绑QQ 自行解绑；黑名单内的 QQ / 玩家无法绑定与签到。
+      </div>
+    </div>
+
+    <div class="section-label">绑定列表</div>
+    <div id="bindingsTable"></div>
+
+    <div class="section-label">黑名单</div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field"><label>添加黑名单（玩家名 / OpenID / UUID）</label><input id="blEntry" placeholder="输入后回车或点击添加"></div>
+      <div class="actions" style="margin-top:18px"><button class="btn ghost" id="blAddBtn">添加</button></div>
+    </div>
+    <div id="blacklistTable"></div>
+
+    <div class="section-label">金币（Vault 经济）</div>
+    <div id="coinsUnavailable" class="empty" style="display:none;margin-bottom:14px">
+      服务器未安装经济插件（未检测到 Vault 经济服务），金币功能不可用。
+    </div>
+    <div id="coinsSection">
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="field"><label>玩家名</label><input id="coinPlayer"></div>
+        <div class="field"><label>数量</label><input id="coinAmount" type="number" step="1"></div>
+        <div class="actions" style="margin-top:18px">
+          <button class="btn ghost" id="coinGive">发放</button>
+          <button class="btn ghost" id="coinTake">扣除</button>
+          <button class="btn ghost" id="coinSet">设为</button>
+        </div>
+      </div>
+      <div id="coinsTable"></div>
+    </div>
+  </section>
+
+  <!-- 高级 -->
+  <section class="panel" data-panel="advanced">
+    <h1 class="panel-title">高级配置</h1>
+    <p class="panel-sub">WebSocket 监听、@ 回复、WebUI 自身设置</p>
+
+    <div class="section-label" data-only="napcat">WebSocket 监听（接收 NapCat 推送的事件）</div>
+    <div class="form-grid" data-only="napcat">
+      <label class="toggle"><input type="checkbox" id="wsEnabled"><span class="track"></span> 启用 WS 客户端</label>
+      <div class="field"><label>WS 地址</label><input id="wsUrl" placeholder="ws://127.0.0.1:3001"></div>
+      <div class="field"><label>WS Access Token（留空复用 bot token）</label><input id="wsAccessToken" type="password"></div>
+      <div class="field"><label>断线重连间隔(ms)</label><input id="wsReconnect" type="number" min="1000"></div>
+    </div>
+
+    <div class="section-label">@ 回复</div>
+    <div class="form-grid">
+      <label class="toggle" data-only="napcat"><input type="checkbox" id="atEnabled"><span class="track"></span> 启用 @ 回复</label>
+      <div class="field" data-only="napcat"><label>机器人 self_id（0=自动学习）</label><input id="atSelfId" type="number"></div>
+      <div class="field"><label>同群冷却(ms)</label><input id="atCooldown" type="number" min="0"></div>
+      <div class="field"><label>查询指令</label><input id="atQueryCommand" placeholder="/查询"></div>
+      <div class="field full"><label>回复模板</label><textarea id="atTemplate"></textarea></div>
+    </div>
+
+    <div class="section-label">机器人管理员（可设置多个 QQ 号）</div>
+    <div class="form-grid">
+      <div class="field full">
+        <label>管理员 QQ 号（英文逗号分隔，可多个；管理员可在群内 @ 机器人用“/执行 指令”远程执行控制台指令）。群主默认拥有管理员权限，无需填写。</label>
+        <input id="admins" placeholder="123456789,987654321">
+      </div>
+    </div>
+
+    <div class="section-label">大模型对话（@ 机器人时调用 AI 回复）</div>
+    <div class="form-grid">
+      <label class="toggle"><input type="checkbox" id="llmEnabled"><span class="track"></span> 启用大模型对话</label>
+      <div class="field"><label>API 地址（OpenAI 兼容）</label><input id="llmApiUrl" placeholder="https://api.openai.com/v1/chat/completions"></div>
+      <div class="field"><label>API Key</label><input id="llmApiKey" type="password"></div>
+      <div class="field"><label>模型名称</label><input id="llmModel" placeholder="gpt-4o-mini"></div>
+      <div class="field"><label>超时(秒)</label><input id="llmTimeout" type="number" min="5" max="120"></div>
+      <div class="field"><label>温度(0~2)</label><input id="llmTemperature" type="number" step="0.1" min="0" max="2"></div>
+      <div class="field"><label>多轮上下文轮数(0=不记忆)</label><input id="llmContextTurns" type="number" min="0" max="20"></div>
+      <div class="field full"><label>系统提示词</label><textarea id="llmSystemPrompt" rows="3"></textarea></div>
+    </div>
+
+    <div class="section-label">WebUI 自身</div>
+    <div class="form-grid">
+      <label class="toggle"><input type="checkbox" id="webEnabled"><span class="track"></span> 启用 WebUI</label>
+      <div class="field"><label>绑定地址</label><input id="webHost" placeholder="127.0.0.1"></div>
+      <div class="field"><label>端口</label><input id="webPort" type="number"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="saveAdvanced">保存</button>
+      <button class="btn ghost" id="reloadAdvanced">仅重载</button>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const $ = (id) => document.getElementById(id);
+const tokenKey = 'paperqqbot_session';
+
+let TOKEN = sessionStorage.getItem(tokenKey) || '';
+const EVENTS = ['start','stop','join','quit','empty','chat','death','tps-warning'];
+
+function toast(msg, kind){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (kind || '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+async function api(path, opts){
+  opts = opts || {};
+  const headers = {'Content-Type':'application/json'};
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  try {
+    const r = await fetch(path, {method: opts.method || 'GET', headers, body: opts.body});
+    const txt = await r.text();
+    let j; try { j = JSON.parse(txt); } catch(e){ j = {ok:false, error:txt}; }
+    if (r.status === 401){
+      sessionStorage.removeItem(tokenKey);
+      TOKEN = '';
+      start();
+      throw new Error('未登录');
+    }
+    if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    return j;
+  } catch(e){
+    if (e.message === '未登录') throw e;
+    toast('请求失败：' + e.message, 'err');
+    throw e;
+  }
+}
+
+// 账号端点请求（不触发全局 401 跳转）
+async function authPost(path, body){
+  const headers = {'Content-Type':'application/json'};
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  const r = await fetch(path, {method:'POST', headers, body: JSON.stringify(body || {})});
+  const txt = await r.text();
+  let j; try { j = JSON.parse(txt); } catch(e){ j = {ok:false, error:txt}; }
+  if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+
+function showCover(which){
+  $('authCover').classList.remove('hide');
+  $('authBind').style.display = which === 'bind' ? 'block' : 'none';
+  $('authLogin').style.display = which === 'login' ? 'block' : 'none';
+}
+
+function enterApp(token){
+  TOKEN = token;
+  sessionStorage.setItem(tokenKey, TOKEN);
+  $('authCover').classList.add('hide');
+  init();
+}
+
+// 启动鉴权流程
+async function start(){
+  if (TOKEN){
+    try {
+      await api('/api/status');
+      $('authCover').classList.add('hide');
+      init();
+      return;
+    } catch(e){
+      sessionStorage.removeItem(tokenKey);
+      TOKEN = '';
+    }
+  }
+  let bound = false;
+  try {
+    const s = await authPost('/api/auth/state', {});
+    bound = !!s.data.bound;
+    if (bound && s.data.email){ $('loginWelcome').textContent = '欢迎，' + s.data.email; }
+  } catch(e){
+    toast('账号服务暂不可用：' + e.message, 'err');
+  }
+  showCover(bound ? 'login' : 'bind');
+}
+
+// 首次绑定
+$('bindBtn').addEventListener('click', async () => {
+  const code = $('bindCodeInput').value.trim();
+  if (!code){ toast('请输入绑定码','err'); return; }
+  try {
+    const r = await authPost('/api/auth/bind', {code});
+    toast('绑定成功','ok');
+    enterApp(r.data.token);
+  } catch(e){ toast(e.message,'err'); }
+});
+$('bindCodeInput').addEventListener('keydown', e => { if (e.key==='Enter') $('bindBtn').click(); });
+
+// 登录方式 tabs
+function activateAuthTab(which){
+  const pw = which === 'pw';
+  $('tabPw').classList.toggle('active', pw);
+  $('tabMail').classList.toggle('active', !pw);
+  $('panePw').classList.toggle('active', pw);
+  $('paneMail').classList.toggle('active', !pw);
+}
+$('tabPw').addEventListener('click', () => activateAuthTab('pw'));
+$('tabMail').addEventListener('click', () => activateAuthTab('mail'));
+
+// 密码登录
+$('pwLoginBtn').addEventListener('click', async () => {
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  if (!email || !password){ toast('请输入邮箱和密码','err'); return; }
+  try {
+    const r = await authPost('/api/auth/login', {email, password});
+    enterApp(r.data.token);
+    toast('登录成功','ok');
+  } catch(e){ toast(e.message,'err'); }
+});
+$('loginPassword').addEventListener('keydown', e => { if (e.key==='Enter') $('pwLoginBtn').click(); });
+
+// 发送邮箱验证码
+$('sendMailBtn').addEventListener('click', async () => {
+  const email = $('mailEmail').value.trim();
+  if (!email){ toast('请输入邮箱','err'); return; }
+  const btn = $('sendMailBtn');
+  btn.disabled = true;
+  try {
+    const r = await authPost('/api/auth/mailcode', {email});
+    if (r.data.sent){ toast('验证码已发送','ok'); }
+    else { toast(r.data.error || '验证码服务未启用','err'); btn.disabled = false; return; }
+    let n = 60;
+    btn.textContent = n + 's';
+    const t = setInterval(() => {
+      n--;
+      btn.textContent = n > 0 ? n + 's' : '发送';
+      if (n <= 0){ clearInterval(t); btn.disabled = false; }
+    }, 1000);
+  } catch(e){ btn.disabled = false; toast(e.message,'err'); }
+});
+
+// 验证码登录
+$('mailLoginBtn').addEventListener('click', async () => {
+  const email = $('mailEmail').value.trim();
+  const code = $('mailCode').value.trim();
+  if (!email || !code){ toast('请输入邮箱和验证码','err'); return; }
+  try {
+    const r = await authPost('/api/auth/verify', {email, code});
+    enterApp(r.data.token);
+    toast('登录成功','ok');
+  } catch(e){ toast(e.message,'err'); }
+});
+$('mailCode').addEventListener('keydown', e => { if (e.key==='Enter') $('mailLoginBtn').click(); });
+
+start();
+
+// tabs
+$('tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tab]');
+  if (!b) return;
+  activateTab(b.dataset.tab);
+});
+
+// 数据加载
+async function loadStatus(){
+  try {
+    const r = await api('/api/status');
+    const d = r.data;
+    $('statCards').innerHTML = `
+      <div class="card"><div class="k">在线玩家</div><div class="v">${d.onlinePlayers}<span style="font-size:13px;color:var(--ink-3)">/${d.maxPlayers}</span></div></div>
+      <div class="card"><div class="k">TPS 1m</div><div class="v">${fmt(d.tps1m)}</div><div class="u">5m=${fmt(d.tps5m)} 15m=${fmt(d.tps15m)}</div></div>
+      <div class="card"><div class="k">已用内存</div><div class="v">${d.memoryUsedMb}<span style="font-size:13px;color:var(--ink-3)">/${d.memoryMaxMb} MB</span></div></div>
+      <div class="card"><div class="k">运行时间</div><div class="v" style="font-size:16px">${d.uptimeFormatted}</div><div class="u">${d.playerList}</div></div>
+    `;
+    $('linkCards').innerHTML = `
+      <div class="card"><div class="k">启用群数</div><div class="v" style="font-size:16px">${d.groups}</div></div>
+      <div class="card" data-only="napcat"><div class="k">WS 监听</div><div class="v" style="font-size:15px;color:${d.wsEnabled?'var(--ink)':'var(--ink-3)'}">${d.wsEnabled?'启用':'关闭'}<span style="font-size:12px;color:${d.wsConnected?'var(--ok)':'var(--danger)'}"> ${d.wsConnected?'● 已连接':'● 未连接'}</span></div></div>
+      <div class="card" data-only="napcat"><div class="k">@ 回复</div><div class="v" style="font-size:15px;color:${d.atReplyEnabled?'var(--ink)':'var(--ink-3)'}">${d.atReplyEnabled?'启用':'关闭'}</div></div>
+    `;
+    $('connDot').className = 'dot ok';
+    $('connText').textContent = '已连接';
+  } catch(e){
+    $('connDot').className = 'dot danger';
+    $('connText').textContent = '连接失败';
+  }
+}
+
+function fmt(v){ return v < 0 ? 'N/A' : (Math.round(v*100)/100); }
+
+let cachedConfig = null;
+let currentMode = 'napcat';
+async function loadConfig(){
+  const r = await api('/api/config');
+  cachedConfig = r.data;
+  fillConfig(r.data);
+}
+
+// 模式切换（仅前端显示，保存后生效）
+$('modeSwitch').addEventListener('click', e => {
+  const b = e.target.closest('.mode-btn');
+  if (!b) return;
+  applyMode(b.dataset.mode);
+});
+
+function applyMode(mode){
+  currentMode = mode;
+  document.querySelectorAll('#modeSwitch .mode-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === mode));
+  const official = mode === 'official';
+  $('officialCard').style.display = official ? '' : 'none';
+  $('napcatCard').style.display = official ? 'none' : '';
+  $('groupList').style.display = official ? 'none' : '';
+  $('officialGroupList').style.display = official ? '' : 'none';
+  // 所有标注 data-only 的元素：仅在所属模式显示，切换后隐藏另一模式独有功能
+  document.querySelectorAll('[data-only]').forEach(el =>
+    el.classList.toggle('mode-hidden', el.getAttribute('data-only') !== mode));
+  $('groupsSub').textContent = official
+    ? '官方模式群以 OpenID 标识，机器人收到群消息后自动登记，可修改备注/开关/事件'
+    : '配置每群接收哪些事件，events 留空等价于 inherit';
+  $('modeHint').textContent = official
+    ? '当前选择：QQ 官方机器人模式，无需额外 QQ 号，只需机器人 ID 与密钥。'
+    : '当前选择：NapCat 模式，需要自行部署 NapCat 并开启 HTTP/WS 服务。';
+}
+
+/**
+ * 填充 token 类输入框。
+ * 后端始终返回脱敏后的 token（含 ***），这里直接显示脱敏值，
+ * 让用户看到"已保存"（密码框显示为 ●●）。保存时后端检测到 ***
+ * 会自动保留真实值不变；若用户清空并输入新值（不含 ***），则覆盖为新值。
+ */
+function setTokenField(input, v){
+  input.value = v || '';
+}
+
+function fillConfig(d){
+  $('serverName').value = d.server.name;
+  $('serverAddress').value = d.server.address;
+  $('serverContact').value = d.server.contact;
+  $('serverExtra').value = d.server.extra;
+  $('serverWebsite').value = d.server.website;
+  $('botHttpUrl').value = d.bot.httpUrl;
+  setTokenField($('botAccessToken'), d.bot.accessToken);
+  $('botRetry').value = d.bot.retry;
+  $('botDebug').checked = d.bot.debug;
+
+  // 官方机器人
+  $('ofAppId').value = d.officialBot ? (d.officialBot.appId || '') : '';
+  setTokenField($('ofSecret'), d.officialBot ? d.officialBot.secret : '');
+
+  // 绑定 / 签到 / 互通
+  $('bindEnabled').checked = d.binding.enabled;
+  $('bindCmd').value = d.binding.requestCommand || '/绑定';
+  $('bindExpire').value = d.binding.codeExpireMinutes;
+  $('bindRebind').checked = d.binding.allowRebind;
+  $('bindRequire').checked = d.binding.requireBind !== false;
+  $('signEnabled').checked = d.signin.enabled;
+  $('signCmd').value = d.signin.command || '/签到';
+  $('signReward').value = d.signin.reward;
+  $('relayEnabled').checked = d.chatRelay.groupToServer;
+  $('relayFormat').value = d.chatRelay.groupFormat || '';
+
+  renderGroups(d.groups);
+  renderOfficialGroups(d.officialGroups || []);
+  renderEventToggles(d.eventToggles);
+  renderTemplates(d.templates);
+
+  $('wsEnabled').checked = d.ws.enabled;
+  $('wsUrl').value = d.ws.url;
+  $('wsReconnect').value = d.ws.reconnectMs;
+  setTokenField($('wsAccessToken'), d.ws.accessToken);
+  $('atEnabled').checked = d.atReply.enabled;
+  $('atSelfId').value = d.atReply.selfId;
+  $('atCooldown').value = d.atReply.cooldownMs;
+  $('atQueryCommand').value = d.atReply.queryCommand || '/查询';
+  $('atTemplate').value = d.atReply.template;
+  $('webEnabled').checked = d.web.enabled;
+  $('webHost').value = d.web.host;
+  $('webPort').value = d.web.port;
+  $('admins').value = d.admins || '';
+  $('llmEnabled').checked = d.llm.enabled;
+  $('llmApiUrl').value = d.llm.apiUrl || '';
+  setTokenField($('llmApiKey'), d.llm.apiKey);
+  $('llmModel').value = d.llm.model || '';
+  $('llmTimeout').value = d.llm.timeoutSeconds;
+  $('llmTemperature').value = d.llm.temperature;
+  $('llmContextTurns').value = d.llm.contextTurns ?? 0;
+  $('llmSystemPrompt').value = d.llm.systemPrompt || '';
+
+  // 绑定/金币数据
+  renderBindings(d.bindingsData || []);
+  renderBlacklist(d.blacklist || []);
+  const economyOk = !!d.economyAvailable;
+  $('coinsSection').style.display = economyOk ? '' : 'none';
+  $('coinsUnavailable').style.display = economyOk ? 'none' : '';
+  if (economyOk) renderCoins(d.coinsData || []);
+
+  applyMode(d.mode || 'napcat');
+}
+
+function renderGroups(groups){
+  const c = $('groupList');
+  c.innerHTML = '';
+  if (!groups || !groups.length){
+    c.innerHTML = '<div class="empty">暂无群，点下方按钮添加</div>';
+    return;
+  }
+  groups.forEach((g, i) => {
+    const row = document.createElement('div');
+    row.className = 'group-row';
+    row.innerHTML = `
+      <input class="g-id" placeholder="群号" value="${g.groupId}">
+      <input class="g-name" placeholder="备注名" value="${g.name || ''}">
+      <select class="g-enabled"><option value="true" ${g.enabled?'selected':''}>启用</option><option value="false" ${!g.enabled?'selected':''}>禁用</option></select>
+      <input class="g-events" placeholder="*, 或 start,stop" value="${g.events || ''}">
+      <button class="btn-del">删除</button>
+    `;
+    row.querySelector('.btn-del').addEventListener('click', () => { row.remove(); });
+    c.appendChild(row);
+  });
+}
+
+function renderOfficialGroups(groups){
+  const c = $('officialGroupList');
+  c.innerHTML = '';
+  if (!groups || !groups.length){
+    c.innerHTML = '<div class="empty">机器人尚未在任何群内收到消息；把机器人加入群并 @它 发言后会自动登记</div>';
+    return;
+  }
+  groups.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'group-row';
+    row.style.gridTemplateColumns = '1fr 120px auto auto auto';
+    row.innerHTML = `
+      <input class="og-openid" placeholder="群 OpenID" value="${g.openid || ''}">
+      <input class="og-note" placeholder="备注" value="${g.note || ''}">
+      <select class="og-enabled"><option value="true" ${g.enabled?'selected':''}>启用</option><option value="false" ${!g.enabled?'selected':''}>禁用</option></select>
+      <input class="og-events" placeholder="*" value="${g.events || '*'}">
+      <button class="btn-del">删除</button>
+    `;
+    row.querySelector('.btn-del').addEventListener('click', () => row.remove());
+    c.appendChild(row);
+  });
+}
+
+function renderEventToggles(t){
+  const c = $('eventToggles');
+  c.innerHTML = '';
+  EVENTS.forEach(ev => {
+    const row = document.createElement('div');
+    row.className = 'event-row';
+    row.innerHTML = `<span class="name">${evName(ev)} <code>${ev}</code></span>`;
+    const tg = document.createElement('label');
+    tg.className = 'toggle';
+    const inp = document.createElement('input');
+    inp.type = 'checkbox';
+    inp.checked = !!t[ev];
+    inp.dataset.ev = ev;
+    tg.appendChild(inp);
+    tg.appendChild(document.createElement('span')).className = 'track';
+    // 因为上面 innerHTML 写法复杂，重新构造
+    tg.innerHTML = '';
+    tg.appendChild(inp);
+    const tr = document.createElement('span');
+    tr.className = 'track';
+    tg.appendChild(tr);
+    row.appendChild(tg);
+    c.appendChild(row);
+  });
+}
+function evName(ev){
+  return {start:'启动',stop:'关闭',join:'加入',quit:'退出',empty:'空服',chat:'聊天',death:'死亡','tps-warning':'TPS 警告'}[ev] || ev;
+}
+
+function renderTemplates(t){
+  const c = $('templatesGrid');
+  c.innerHTML = '';
+  EVENTS.forEach(ev => {
+    const wrap = document.createElement('div');
+    wrap.className = 'field full';
+    wrap.innerHTML = `<label>${evName(ev)} <code style="color:var(--ink-3)">${ev}</code></label>`;
+    const ta = document.createElement('textarea');
+    ta.dataset.ev = ev;
+    ta.value = t[ev] || '';
+    wrap.appendChild(ta);
+    c.appendChild(wrap);
+  });
+}
+
+// ============== 绑定 / 黑名单 / 金币 ==============
+
+function escHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function renderBindings(list){
+  const c = $('bindingsTable');
+  if (!list.length){ c.innerHTML = '<div class="empty">暂无绑定</div>'; return; }
+  let html = '<div class="table-wrap"><table class="data-table"><tr><th>游戏玩家</th><th>QQ OpenID</th><th></th></tr>';
+  list.forEach(b => {
+    html += `<tr><td>${escHtml(b.player)}</td><td class="mono">${escHtml(b.openid)}</td>
+      <td style="text-align:right"><button class="mini-btn" data-unbind="${escHtml(b.player)}">解绑</button></td></tr>`;
+  });
+  c.innerHTML = html + '</table></div>';
+  c.querySelectorAll('[data-unbind]').forEach(btn => btn.addEventListener('click', async () => {
+    await manage({op:'unbind', player:btn.dataset.unbind});
+  }));
+}
+
+function renderBlacklist(list){
+  const c = $('blacklistTable');
+  if (!list.length){ c.innerHTML = '<div class="empty">黑名单为空</div>'; return; }
+  let html = '<div class="table-wrap"><table class="data-table"><tr><th>条目</th><th></th></tr>';
+  list.forEach(e => {
+    html += `<tr><td class="mono">${escHtml(e)}</td>
+      <td style="text-align:right"><button class="mini-btn" data-bl="${escHtml(e)}">移除</button></td></tr>`;
+  });
+  c.innerHTML = html + '</table></div>';
+  c.querySelectorAll('[data-bl]').forEach(btn => btn.addEventListener('click', async () => {
+    await manage({op:'blacklist-remove', entry:btn.dataset.bl});
+  }));
+}
+
+function renderCoins(list){
+  const c = $('coinsTable');
+  if (!list.length){ c.innerHTML = '<div class="empty">暂无金币记录</div>'; return; }
+  let html = '<div class="table-wrap"><table class="data-table"><tr><th>玩家</th><th>金币余额</th></tr>';
+  list.forEach(x => {
+    html += `<tr><td>${escHtml(x.name)}</td><td class="mono">${escHtml(x.balance)}</td></tr>`;
+  });
+  c.innerHTML = html + '</table></div>';
+}
+
+async function manage(payload){
+  try {
+    const r = await api('/api/manage', {method:'POST', body:JSON.stringify(payload)});
+    toast(r.msg || '操作完成', r.ok ? 'ok' : 'err');
+    await new Promise(r => setTimeout(r, 300));
+    await loadConfig();
+  } catch(e){}
+}
+
+// 黑名单添加
+async function addBlacklistEntry(){
+  const entry = $('blEntry').value.trim();
+  if (!entry){ toast('请输入内容','err'); return; }
+  await manage({op:'blacklist-add', entry});
+  $('blEntry').value = '';
+}
+$('blAddBtn').addEventListener('click', addBlacklistEntry);
+$('blEntry').addEventListener('keydown', e => { if (e.key === 'Enter') addBlacklistEntry(); });
+
+// 金币操作
+async function coinAction(op){
+  const player = $('coinPlayer').value.trim();
+  const amount = $('coinAmount').value.trim();
+  if (!player || amount === ''){ toast('请填写玩家名和数量','err'); return; }
+  await manage({op, player, amount});
+}
+$('coinGive').addEventListener('click', () => coinAction('coins-give'));
+$('coinTake').addEventListener('click', () => coinAction('coins-take'));
+$('coinSet').addEventListener('click', () => coinAction('coins-set'));
+
+// 收集配置
+function collectConfig(){
+  const groups = [];
+  document.querySelectorAll('#groupList .group-row').forEach(row => {
+    groups.push({
+      groupId: parseInt(row.querySelector('.g-id').value) || 0,
+      name: row.querySelector('.g-name').value,
+      enabled: row.querySelector('.g-enabled').value === 'true',
+      events: row.querySelector('.g-events').value
+    });
+  });
+  const eventToggles = {};
+  document.querySelectorAll('#eventToggles input[type=checkbox]').forEach(inp => {
+    eventToggles[inp.dataset.ev] = inp.checked;
+  });
+  const templates = {};
+  document.querySelectorAll('#templatesGrid textarea').forEach(ta => {
+    templates[ta.dataset.ev] = ta.value;
+  });
+  // 官方模式群
+  const officialGroups = [];
+  document.querySelectorAll('#officialGroupList .group-row').forEach(row => {
+    officialGroups.push({
+      openid: row.querySelector('.og-openid').value,
+      note: row.querySelector('.og-note').value,
+      enabled: row.querySelector('.og-enabled').value === 'true',
+      events: row.querySelector('.og-events').value
+    });
+  });
+  return {
+    mode: currentMode,
+    'official-bot': {
+      'app-id': $('ofAppId').value,
+      secret: $('ofSecret').value
+    },
+    bot: {
+      'http-url': $('botHttpUrl').value,
+      'access-token': $('botAccessToken').value,
+      retry: parseInt($('botRetry').value) || 0,
+      debug: $('botDebug').checked
+    },
+    server: {
+      name: $('serverName').value,
+      address: $('serverAddress').value,
+      contact: $('serverContact').value,
+      extra: $('serverExtra').value,
+      website: $('serverWebsite').value
+    },
+    groups: groups.map(g => ({
+      'group-id': g.groupId,
+      name: g.name,
+      enabled: g.enabled,
+      events: g.events ? g.events.split(',').map(s => s.trim()).filter(Boolean) : []
+    })),
+    officialGroups,
+    'event-toggles': eventToggles,
+    templates: templates,
+    ws: {
+      enabled: $('wsEnabled').checked,
+      url: $('wsUrl').value,
+      'access-token': $('wsAccessToken').value,
+      'reconnect-ms': parseInt($('wsReconnect').value) || 5000
+    },
+    'at-reply': {
+      enabled: $('atEnabled').checked,
+      'self-id': parseInt($('atSelfId').value) || 0,
+      'cooldown-ms': parseInt($('atCooldown').value) || 3000,
+      'query-command': $('atQueryCommand').value || '/查询',
+      template: $('atTemplate').value
+    },
+    binding: {
+      enabled: $('bindEnabled').checked,
+      'request-command': $('bindCmd').value || '/绑定',
+      'code-expire-minutes': parseInt($('bindExpire').value) || 10,
+      'allow-rebind': $('bindRebind').checked,
+      'require-bind': $('bindRequire').checked
+    },
+    signin: {
+      enabled: $('signEnabled').checked,
+      command: $('signCmd').value || '/签到',
+      reward: parseFloat($('signReward').value) || 0
+    },
+    'chat-relay': {
+      'group-to-server': $('relayEnabled').checked,
+      'group-format': $('relayFormat').value || ''
+    },
+    web: {
+      enabled: $('webEnabled').checked,
+      host: $('webHost').value,
+      port: parseInt($('webPort').value) || 8765
+    },
+    admins: $('admins').value,
+    llm: {
+      enabled: $('llmEnabled').checked,
+      'api-url': $('llmApiUrl').value,
+      'api-key': $('llmApiKey').value,
+      model: $('llmModel').value,
+      'system-prompt': $('llmSystemPrompt').value,
+      'timeout-seconds': parseInt($('llmTimeout').value) || 30,
+      temperature: parseFloat($('llmTemperature').value) || 0.7,
+      'context-turns': Math.max(0, Math.min(20, parseInt($('llmContextTurns').value) || 0))
+    }
+  };
+}
+
+async function saveConfig(){
+  try {
+    const body = JSON.stringify(collectConfig());
+    const r = await api('/api/config', {method:'POST', body});
+    toast(r.msg || '已保存', r.ok ? 'ok' : 'err');
+    if (r.ok) {
+      // 等待异步重启完成（若 web 配置变了会重启 WebServer），然后重载配置
+      await new Promise(r => setTimeout(r, 800));
+      await loadConfigRetry();
+    }
+  } catch(e){}
+}
+
+async function loadConfigRetry(retries){
+  retries = retries || 3;
+  for (let i = 0; i < retries; i++) {
+    try {
+      await loadConfig();
+      return;
+    } catch(e) {
+      if (i < retries - 1) await new Promise(r => setTimeout(r, 800));
+    }
+  }
+}
+
+async function reloadPlugin(){
+  try {
+    const r = await api('/api/reload', {method:'POST'});
+    toast(r.ok ? '已重载' : '重载失败', r.ok ? 'ok' : 'err');
+    if (r.ok) {
+      await new Promise(r => setTimeout(r, 800));
+      // 重试加载状态（WebServer 可能正在重启）
+      for (let i = 0; i < 3; i++) {
+        try { await loadStatus(); break; } catch(e) { if (i < 2) await new Promise(r => setTimeout(r, 800)); }
+      }
+    }
+  } catch(e){}
+}
+
+async function sendTest(){
+  try {
+    const r = await api('/api/test', {method:'POST', body: JSON.stringify({event:'start'})});
+    toast(r.msg || '已发送', r.ok ? 'ok' : 'err');
+  } catch(e){}
+}
+
+// 绑定按钮
+$('saveServer').addEventListener('click', saveConfig);
+$('saveGroups').addEventListener('click', saveConfig);
+$('saveEvents').addEventListener('click', saveConfig);
+$('saveAdvanced').addEventListener('click', saveConfig);
+$('reloadBtn').addEventListener('click', reloadPlugin);
+$('reloadAdvanced').addEventListener('click', reloadPlugin);
+$('testBtn').addEventListener('click', sendTest);
+$('addGroupBtn').addEventListener('click', () => {
+  if (currentMode === 'official') {
+    const c = $('officialGroupList');
+    if (c.querySelector('.empty')) c.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'group-row';
+    row.style.gridTemplateColumns = '1fr 120px auto auto auto';
+    row.innerHTML = `
+      <input class="og-openid" placeholder="群 OpenID">
+      <input class="og-note" placeholder="备注">
+      <select class="og-enabled"><option value="true" selected>启用</option><option value="false">禁用</option></select>
+      <input class="og-events" placeholder="*" value="*">
+      <button class="btn-del">删除</button>
+    `;
+    row.querySelector('.btn-del').addEventListener('click', () => row.remove());
+    c.appendChild(row);
+    return;
+  }
+  const c = $('groupList');
+  if (c.querySelector('.empty')) c.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'group-row';
+  row.innerHTML = `
+    <input class="g-id" placeholder="群号">
+    <input class="g-name" placeholder="备注名">
+    <select class="g-enabled"><option value="true" selected>启用</option><option value="false">禁用</option></select>
+    <input class="g-events" placeholder="*" value="*">
+    <button class="btn-del">删除</button>
+  `;
+  row.querySelector('.btn-del').addEventListener('click', () => { row.remove(); });
+  c.appendChild(row);
+});
+
+// 初始化
+function init(){
+  activateTab('overview');
+  loadStatus().catch(()=>{});
+  loadConfig().catch(()=>{});
+  setInterval(() => loadStatus().catch(()=>{}), 5000);
+}
+
+function activateTab(name){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const panel = document.querySelector(`.panel[data-panel="${name}"]`);
+  if (panel) panel.classList.add('active');
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+}
+</script>
+</body>
+</html>

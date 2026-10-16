@@ -1,0 +1,39 @@
+name: PaperQQBot
+version: '1.0.0'
+main: com.example.paperqqbot.PaperQQBotPlugin
+api-version: '1.20'
+description: Paper QQ Bot - NapCat / QQ官方机器人双模式，服务器事件推送、消息互通、QQ绑定与群签到
+author: YourName
+load: STARTUP
+
+commands:
+  paperqqbot:
+    description: PaperQQBot 管理命令
+    usage: /paperqqbot help
+    aliases:
+      - pqb
+      - paperqq
+  bindqq:
+    description: 在游戏内申请 QQ 绑定验证码（仅本人可见）
+    usage: /bindqq
+    aliases:
+      - 绑定QQ
+  qqunbind:
+    description: 解除 QQ 绑定
+    usage: /qqunbind
+    aliases:
+      - qq解绑
+      - 解绑QQ
+  coins:
+    description: 查询金币余额
+    usage: /coins
+    aliases:
+      - 金币
+
+permissions:
+  paperqqbot.admin:
+    description: 管理 PaperQQBot
+    default: op
+  paperqqbot.use:
+    description: 使用 PaperQQBot 查询
+    default: true
